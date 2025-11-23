@@ -132,23 +132,33 @@ const Trap = () => {
       console.log('[Trap] Forensics detected_type:', responseData.forensics?.detected_type);
       console.log('[Trap] ============================================');
 
-      // Check for redirect action (Admin Login) - MUST BE FIRST CHECK
+      // PRIORITY 1: Check for redirect action (Admin Login) - MUST BE FIRST CHECK
       if (responseData.response?.action === 'redirect') {
-        console.log('[Trap] ✓ Admin access detected - redirecting to /dashboard');
+        console.log('[Trap] ✓✓✓ ADMIN ACCESS DETECTED - REDIRECTING TO /dashboard ✓✓✓');
+        console.log('[Trap] Response data:', responseData);
+        setLoading(false);
         navigate('/dashboard');
         return;
       }
       
-      // Debug: Log admin check result
-      if (responseData.forensics?.detected_type === "Authorized Access") {
-        console.log("[Trap] ⚠️ Authorized Access detected but action is not 'redirect'!");
+      // PRIORITY 2: Check for Authorized Access in forensics (fallback check)
+      if (responseData.forensics?.detected_type === "Authorized Access" || 
+          responseData.attack_type === "Authorized Access") {
+        console.log("[Trap] ⚠️ Authorized Access detected in forensics!");
         console.log("[Trap] Action is:", responseData.response?.action);
-        // Force redirect if authorized access is detected
-        if (responseData.forensics?.detected_type === "Authorized Access") {
-          console.log("[Trap] Forcing redirect to /dashboard");
-          navigate('/dashboard');
-          return;
-        }
+        console.log("[Trap] Forcing redirect to /dashboard (admin access)");
+        setLoading(false);
+        navigate('/dashboard');
+        return;
+      }
+      
+      // PRIORITY 3: Check if response message indicates successful login
+      if (responseData.response?.message === "Login Successful" && 
+          responseData.response?.deception === "None") {
+        console.log("[Trap] Login successful with no deception - redirecting to /dashboard");
+        setLoading(false);
+        navigate('/dashboard');
+        return;
       }
 
       // Check for fake dashboard redirect (Attacker Tarpit)
