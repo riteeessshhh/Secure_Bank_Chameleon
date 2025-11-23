@@ -23,6 +23,13 @@ class Database:
                       confidence REAL,
                       deception_strategy TEXT,
                       merkle_hash TEXT)''')
+        # Create actions table for session replay
+        c.execute('''CREATE TABLE IF NOT EXISTS session_actions
+                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      event_id INTEGER,
+                      actions_json TEXT,
+                      created_at TEXT,
+                      FOREIGN KEY (event_id) REFERENCES logs(id) ON DELETE CASCADE)''')
         conn.commit()
         conn.close()
 
@@ -45,3 +52,29 @@ class Database:
         rows = c.fetchall()
         conn.close()
         return [dict(row) for row in rows]
+    
+    def save_actions(self, event_id, actions):
+        """Save session actions for an event"""
+        import json
+        conn = sqlite3.connect(self.db_name)
+        c = conn.cursor()
+        timestamp = datetime.datetime.now().isoformat()
+        actions_json = json.dumps(actions)
+        c.execute("INSERT INTO session_actions (event_id, actions_json, created_at) VALUES (?, ?, ?)",
+                  (event_id, actions_json, timestamp))
+        conn.commit()
+        conn.close()
+    
+    def get_actions(self, event_id):
+        """Get session actions for an event"""
+        import json
+        conn = sqlite3.connect(self.db_name)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("SELECT actions_json FROM session_actions WHERE event_id = ? ORDER BY id DESC LIMIT 1",
+                  (event_id,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            return json.loads(row['actions_json'])
+        return []

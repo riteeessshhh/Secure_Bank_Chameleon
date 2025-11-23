@@ -36,24 +36,22 @@ const Trap = () => {
     }
   }, []);
 
-  // Record keystrokes (DEMO MODE ONLY)
+  // Record keystrokes and events (DEMO MODE ONLY)
   useEffect(() => {
     if (!DEMO_MODE || !isRecording) return;
 
     const handleKeyDown = (e, fieldName, isPassword = false) => {
-      // Skip special keys
-      if (['Tab', 'Enter', 'Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) {
-        return;
-      }
+      // Record all keys including special keys
+      const fieldType = isPassword ? 'password' : 'text';
+      sessionRecorder.recordKeystroke(e.key, fieldName, isPassword, fieldType);
+    };
 
-      let key = e.key;
-      if (e.key === 'Backspace') {
-        key = '\b';
-      } else if (e.key === 'Enter') {
-        key = '\n';
-      }
+    const handleFocus = (fieldName, fieldType) => {
+      sessionRecorder.recordFocus(fieldName, fieldType);
+    };
 
-      sessionRecorder.recordKeystroke(key, fieldName, isPassword);
+    const handleBlur = (fieldName) => {
+      sessionRecorder.recordBlur(fieldName);
     };
 
     const userIdInput = userIdRef.current;
@@ -61,20 +59,26 @@ const Trap = () => {
 
     if (userIdInput) {
       userIdInput.addEventListener('keydown', (e) => handleKeyDown(e, 'userid', false));
-      userIdInput.addEventListener('focus', () => sessionRecorder.recordFocus('userid'));
+      userIdInput.addEventListener('focus', () => handleFocus('userid', 'text'));
+      userIdInput.addEventListener('blur', () => handleBlur('userid'));
     }
 
     if (passwordInput) {
       passwordInput.addEventListener('keydown', (e) => handleKeyDown(e, 'password', true));
-      passwordInput.addEventListener('focus', () => sessionRecorder.recordFocus('password'));
+      passwordInput.addEventListener('focus', () => handleFocus('password', 'password'));
+      passwordInput.addEventListener('blur', () => handleBlur('password'));
     }
 
     return () => {
       if (userIdInput) {
         userIdInput.removeEventListener('keydown', handleKeyDown);
+        userIdInput.removeEventListener('focus', handleFocus);
+        userIdInput.removeEventListener('blur', handleBlur);
       }
       if (passwordInput) {
         passwordInput.removeEventListener('keydown', handleKeyDown);
+        passwordInput.removeEventListener('focus', handleFocus);
+        passwordInput.removeEventListener('blur', handleBlur);
       }
     };
   }, [isRecording, userId, password]);

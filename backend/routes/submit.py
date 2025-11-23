@@ -12,9 +12,6 @@ import json
 router = APIRouter()
 db = Database()
 
-# In-memory store for actions (in production, use database)
-actions_store = []
-
 
 class Action(BaseModel):
     """Single action in a session"""
@@ -100,13 +97,10 @@ async def submit_attack(request: Request, payload: SubmitRequest):
         event_hash
     )
     
-    # Store actions separately (in production, use database table)
+    # Store actions in database
     if payload.actions:
-        actions_store.append({
-            'event_id': log_id,
-            'actions': [action.dict() for action in payload.actions],
-            'timestamp': datetime.now().isoformat()
-        })
+        actions_list = [action.dict() for action in payload.actions]
+        db.save_actions(log_id, actions_list)
     
     # Emit socket.io event (if socket.io is set up)
     # socketio.emit('attack_event', {
@@ -126,18 +120,11 @@ async def submit_attack(request: Request, payload: SubmitRequest):
 @router.get("/api/events/{event_id}/actions")
 async def get_event_actions(event_id: int):
     """Get actions for a specific event"""
-    # Find actions for this event
-    event_actions = next(
-        (item for item in actions_store if item['event_id'] == event_id),
-        None
-    )
-    
-    if not event_actions:
-        return {"actions": []}
+    actions = db.get_actions(event_id)
     
     return {
         "event_id": event_id,
-        "actions": event_actions['actions']
+        "actions": actions
     }
 
 
@@ -150,17 +137,11 @@ async def get_event(event_id: int):
     if not event:
         return {"error": "Event not found"}
     
-    # Get actions
-    event_actions = next(
-        (item for item in actions_store if item['event_id'] == event_id),
-        None
-    )
+    # Get actions from database
+    actions = db.get_actions(event_id)
     
     result = dict(event)
-    if event_actions:
-        result['actions'] = event_actions['actions']
-    else:
-        result['actions'] = []
+    result['actions'] = actions
     
     return result
 
