@@ -23,32 +23,76 @@ const Dashboard = () => {
     const [confidenceStats, setConfidenceStats] = useState({ average: 0, min: 0, max: 0, total: 0 });
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState('All');
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [lastUpdateTime, setLastUpdateTime] = useState(null);
+    const [connectionStatus, setConnectionStatus] = useState('connected'); // 'connected', 'disconnected', 'error'
+    const [errorMessage, setErrorMessage] = useState(null);
 
     const fetchLogs = async () => {
         try {
-            const response = await axios.get(`${API_URL}/api/logs`);
-            setLogs(response.data.logs);
-            setMerkleRoot(response.data.merkle_root);
-            calculateStats(response.data.logs);
+            console.log('[Dashboard] Fetching logs from:', `${API_URL}/api/logs`);
+            const response = await axios.get(`${API_URL}/api/logs`, {
+                timeout: 10000, // 10 second timeout
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
+            
+            console.log('[Dashboard] Logs fetched successfully', {
+                count: response.data.logs?.length || 0,
+                timestamp: new Date().toISOString()
+            });
+            
+            setLogs(response.data.logs || []);
+            setMerkleRoot(response.data.merkle_root || '');
+            calculateStats(response.data.logs || []);
+            setLastUpdateTime(new Date());
+            setConnectionStatus('connected');
+            setErrorMessage(null);
         } catch (error) {
-            console.error("Error fetching logs:", error);
+            console.error("[Dashboard] Error fetching logs:", {
+                error: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                url: `${API_URL}/api/logs`,
+                timestamp: new Date().toISOString()
+            });
+            setConnectionStatus('error');
+            setErrorMessage(`Failed to fetch logs: ${error.message}`);
+            // Don't clear existing logs on error, keep showing last known data
         }
     };
 
     const fetchStats = async () => {
         try {
+            console.log('[Dashboard] Fetching stats from:', API_URL);
             const [timeSeriesRes, topIPsRes, strategyRes, confidenceRes] = await Promise.all([
-                axios.get(`${API_URL}/api/stats/time-series`),
-                axios.get(`${API_URL}/api/stats/top-ips`),
-                axios.get(`${API_URL}/api/stats/strategies`),
-                axios.get(`${API_URL}/api/stats/confidence`)
+                axios.get(`${API_URL}/api/stats/time-series`, { timeout: 10000, headers: { 'Cache-Control': 'no-cache' } }),
+                axios.get(`${API_URL}/api/stats/top-ips`, { timeout: 10000, headers: { 'Cache-Control': 'no-cache' } }),
+                axios.get(`${API_URL}/api/stats/strategies`, { timeout: 10000, headers: { 'Cache-Control': 'no-cache' } }),
+                axios.get(`${API_URL}/api/stats/confidence`, { timeout: 10000, headers: { 'Cache-Control': 'no-cache' } })
             ]);
-            setTimeSeries(timeSeriesRes.data);
-            setTopIPs(topIPsRes.data);
-            setStrategyStats(strategyRes.data);
-            setConfidenceStats(confidenceRes.data);
+            
+            console.log('[Dashboard] Stats fetched successfully', {
+                timeSeries: timeSeriesRes.data?.length || 0,
+                topIPs: topIPsRes.data?.length || 0,
+                strategies: strategyRes.data?.length || 0,
+                timestamp: new Date().toISOString()
+            });
+            
+            setTimeSeries(timeSeriesRes.data || []);
+            setTopIPs(topIPsRes.data || []);
+            setStrategyStats(strategyRes.data || []);
+            setConfidenceStats(confidenceRes.data || {});
         } catch (error) {
-            console.error("Error fetching stats:", error);
+            console.error("[Dashboard] Error fetching stats:", {
+                error: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                timestamp: new Date().toISOString()
+            });
+            // Don't clear existing stats on error
         }
     };
 
@@ -92,14 +136,50 @@ const Dashboard = () => {
     };
 
     useEffect(() => {
-        fetchLogs();
-        fetchStats();
-        const interval = setInterval(() => {
-            fetchLogs();
-            fetchStats();
-        }, 2000); // Live updates every 2 seconds
-        return () => clearInterval(interval);
-    }, []);
+        // Initial fetch
+        console.log('[Dashboard] Initializing dashboard', {
+            API_URL,
+            timestamp: new Date().toISOString()
+        });
+        
+        const performFetch = async () => {
+            setIsRefreshing(true);
+            setConnectionStatus('connecting');
+            try {
+                await Promise.all([fetchLogs(), fetchStats()]);
+            } catch (error) {
+                console.error('[Dashboard] Error in initial fetch:', error);
+                setConnectionStatus('error');
+            } finally {
+                setIsRefreshing(false);
+            }
+        };
+        
+        performFetch();
+        
+        // Set up polling interval
+        const interval = setInterval(async () => {
+            console.log('[Dashboard] Polling for updates', {
+                timestamp: new Date().toISOString(),
+                lastUpdate: lastUpdateTime?.toISOString(),
+                currentLogsCount: logs.length
+            });
+            setIsRefreshing(true);
+            try {
+                await Promise.all([fetchLogs(), fetchStats()]);
+            } catch (error) {
+                console.error('[Dashboard] Error in polling:', error);
+                setConnectionStatus('error');
+            } finally {
+                setIsRefreshing(false);
+            }
+        }, 3000); // Poll every 3 seconds (slightly longer to reduce load)
+        
+        return () => {
+            console.log('[Dashboard] Cleaning up polling interval');
+            clearInterval(interval);
+        };
+    }, []); // Only run once on mount - don't depend on API_URL or lastUpdateTime to avoid re-creating interval
 
     useEffect(() => {
         // Filter logs based on search and filter type
@@ -316,11 +396,57 @@ const Dashboard = () => {
                     <Shield className="w-6 h-6 sm:w-8 sm:h-8" /> Secure Bank <span className="text-gray-400 dark:text-gray-400 light:text-gray-600 text-xs sm:text-sm">Forensic Dashboard</span>
                 </h1>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                    {/* Connection Status & Last Update */}
+                    <div className="flex items-center gap-2 text-xs">
+                        <div className={`flex items-center gap-1 px-2 py-1 rounded ${
+                            connectionStatus === 'connected' 
+                                ? 'bg-green-900/50 text-green-400' 
+                                : connectionStatus === 'error'
+                                ? 'bg-red-900/50 text-red-400'
+                                : 'bg-yellow-900/50 text-yellow-400'
+                        }`}>
+                            <div className={`w-2 h-2 rounded-full ${
+                                connectionStatus === 'connected' 
+                                    ? 'bg-green-400 animate-pulse' 
+                                    : connectionStatus === 'error'
+                                    ? 'bg-red-400'
+                                    : 'bg-yellow-400'
+                            }`} />
+                            <span className="font-semibold">
+                                {connectionStatus === 'connected' ? 'LIVE' : connectionStatus === 'error' ? 'ERROR' : 'CONNECTING'}
+                            </span>
+                        </div>
+                        {lastUpdateTime && (
+                            <span className="text-gray-500 dark:text-gray-500 light:text-gray-600">
+                                Updated: {lastUpdateTime.toLocaleTimeString()}
+                            </span>
+                        )}
+                        {isRefreshing && (
+                            <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />
+                        )}
+                    </div>
                     <div className="hidden sm:block text-left sm:text-right">
                         <p className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600">MERKLE ROOT (INTEGRITY CHECK)</p>
                         <p className="text-xs text-yellow-500 dark:text-yellow-500 light:text-yellow-600 font-mono bg-gray-800 dark:bg-gray-800 light:bg-gray-200 p-1 rounded break-all">{merkleRoot || "Calculating..."}</p>
                     </div>
                     <div className="flex gap-2 flex-wrap">
+                        <button
+                            onClick={async () => {
+                                console.log('[Dashboard] Manual refresh triggered');
+                                setIsRefreshing(true);
+                                try {
+                                    await Promise.all([fetchLogs(), fetchStats()]);
+                                } finally {
+                                    setIsRefreshing(false);
+                                }
+                            }}
+                            disabled={isRefreshing}
+                            className="bg-blue-600 dark:bg-blue-600 light:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-700 light:hover:bg-blue-600 text-white px-3 py-2 rounded flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Refresh data now"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            <span className="hidden sm:inline">Refresh</span>
+                        </button>
                         <button
                             onClick={toggleTheme}
                             className="bg-gray-700 dark:bg-gray-700 light:bg-gray-200 hover:bg-gray-600 dark:hover:bg-gray-600 light:hover:bg-gray-300 text-white dark:text-white light:text-gray-900 px-3 py-2 rounded flex items-center gap-2 transition-colors"
