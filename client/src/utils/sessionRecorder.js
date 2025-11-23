@@ -31,6 +31,7 @@ class SessionRecorder {
         this.lastMouseMoveTime = 0;
         this.lastScrollTime = 0;
         this.boundHandlers = new Map(); // Track bound handlers for cleanup
+        this.fieldTexts = {}; // Track text per field for accurate replay
     }
     
     /**
@@ -40,8 +41,12 @@ class SessionRecorder {
         this.actions = [];
         this.startTime = Date.now();
         this.isRecording = true;
+        this.fieldTexts = {}; // Reset field texts
         this.attachGlobalListeners();
-        console.log('[SessionRecorder] Recording started');
+        console.log('[SessionRecorder] Recording started', {
+            mode: this.recordingMode,
+            timestamp: new Date().toISOString()
+        });
     }
     
     /**
@@ -50,7 +55,13 @@ class SessionRecorder {
     stop() {
         this.isRecording = false;
         this.detachGlobalListeners();
-        console.log('[SessionRecorder] Recording stopped. Total actions:', this.actions.length);
+        const summary = this.getSummary();
+        console.log('[SessionRecorder] Recording stopped', {
+            totalActions: this.actions.length,
+            duration: this.actions.length > 0 ? this.actions[this.actions.length - 1].ts : 0,
+            summary: summary,
+            fieldTexts: this.fieldTexts
+        });
         return this.actions;
     }
     
@@ -156,45 +167,61 @@ class SessionRecorder {
      * @param {string} fieldType - Type of field (text, password, email, etc.)
      */
     recordKeystroke(key, target = 'input', isPassword = false, fieldType = 'text') {
-        if (!this.isRecording) return;
-        
-        // In production mode, skip password field keystrokes
-        if (this.recordingMode === 'production' && isPassword) {
+        if (!this.isRecording) {
+            console.warn('[SessionRecorder] Attempted to record keystroke but not recording');
             return;
         }
         
-        // Handle special keys
+        // Ensure actions array exists
+        if (!this.actions) {
+            console.warn('[SessionRecorder] Actions array was undefined, reinitializing');
+            this.actions = [];
+        }
+        
+        // In production mode, skip password field keystrokes
+        if (this.recordingMode === 'production' && isPassword) {
+            console.log('[SessionRecorder] Skipping password keystroke (production mode)');
+            return;
+        }
+        
+        // Initialize field text tracking if needed
+        if (!this.fieldTexts[target]) {
+            this.fieldTexts[target] = '';
+        }
+        
+        // Handle special keys and update field text
         let normalizedKey = key;
         let keyType = 'character';
+        let currentFieldText = this.fieldTexts[target] || '';
         
         if (key === 'Backspace' || key === '\b') {
             normalizedKey = '[BACKSPACE]';
             keyType = 'special';
+            // Update field text
+            this.fieldTexts[target] = currentFieldText.slice(0, -1);
         } else if (key === 'Delete' || key === 'Del') {
             normalizedKey = '[DELETE]';
             keyType = 'special';
+            // Delete doesn't change text in this simple implementation
         } else if (key === 'Enter' || key === '\n') {
             normalizedKey = '[ENTER]';
             keyType = 'special';
+            this.fieldTexts[target] = currentFieldText + '\n';
         } else if (key === 'Tab') {
             normalizedKey = '[TAB]';
             keyType = 'special';
-        } else if (key === 'ArrowLeft') {
-            normalizedKey = '[LEFT]';
+            this.fieldTexts[target] = currentFieldText + '    ';
+        } else if (key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown') {
+            normalizedKey = `[${key.toUpperCase()}]`;
             keyType = 'special';
-        } else if (key === 'ArrowRight') {
-            normalizedKey = '[RIGHT]';
-            keyType = 'special';
-        } else if (key === 'ArrowUp') {
-            normalizedKey = '[UP]';
-            keyType = 'special';
-        } else if (key === 'ArrowDown') {
-            normalizedKey = '[DOWN]';
-            keyType = 'special';
-        } else if (key.length > 1) {
+            // Arrow keys don't change text
+        } else if (key && key.length > 1 && !['Shift', 'Control', 'Alt', 'Meta'].includes(key)) {
             // Other special keys
             normalizedKey = `[${key.toUpperCase()}]`;
             keyType = 'special';
+        } else if (key && key.length === 1) {
+            // Regular character
+            this.fieldTexts[target] = currentFieldText + key;
         }
         
         const action = {
@@ -205,10 +232,19 @@ class SessionRecorder {
             keyType: keyType,
             target: target,
             fieldType: fieldType,
-            isPassword: isPassword
+            isPassword: isPassword,
+            fieldText: this.fieldTexts[target] // Store current field text for accurate replay
         };
         
         this.actions.push(action);
+        
+        console.log('[SessionRecorder] Keystroke recorded', {
+            key: key,
+            normalizedKey: normalizedKey,
+            target: target,
+            fieldText: this.fieldTexts[target],
+            actionCount: this.actions.length
+        });
     }
     
     /**
@@ -389,7 +425,9 @@ class SessionRecorder {
     clear() {
         this.actions = [];
         this.startTime = null;
+        this.fieldTexts = {};
         this.detachGlobalListeners();
+        console.log('[SessionRecorder] Actions cleared');
     }
     
     /**

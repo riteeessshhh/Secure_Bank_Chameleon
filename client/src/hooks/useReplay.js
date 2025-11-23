@@ -18,13 +18,22 @@ export const useReplay = (actions = []) => {
     const [currentFrame, setCurrentFrame] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
-    const [displayedText, setDisplayedText] = useState('');
+    const [fieldTexts, setFieldTexts] = useState({}); // Track text per field
     const [currentAction, setCurrentAction] = useState(null);
     const [mousePosition, setMousePosition] = useState({ x: null, y: null });
     const [scrollPosition, setScrollPosition] = useState({ x: 0, y: 0 });
     const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
     const [focusedField, setFocusedField] = useState(null);
     const playbackTimerRef = useRef(null);
+    
+    // Log actions on mount for debugging
+    useEffect(() => {
+        console.log('[useReplay] Actions received', {
+            count: actions.length,
+            actions: actions.slice(0, 10), // Log first 10 actions
+            hasMore: actions.length > 10
+        });
+    }, [actions.length]);
     
     // Normalize actions into frames with better timing
     const frames = actions.map((action, index) => {
@@ -48,28 +57,66 @@ export const useReplay = (actions = []) => {
     
     // Process a single frame
     const processFrame = (frameIndex) => {
-        if (frameIndex < 0 || frameIndex >= frames.length) return;
+        if (frameIndex < 0 || frameIndex >= frames.length) {
+            console.warn('[useReplay] Invalid frame index', frameIndex);
+            return;
+        }
         
         const frame = frames[frameIndex];
+        console.log('[useReplay] Processing frame', {
+            index: frameIndex,
+            type: frame.type,
+            target: frame.target,
+            payload: frame.payload
+        });
         
         // Process based on action type
         switch (frame.type) {
             case 'keystroke':
-                if (frame.payload) {
-                    if (frame.payload === '[BACKSPACE]' || frame.originalKey === 'Backspace') {
-                        setDisplayedText(prev => prev.slice(0, -1));
-                    } else if (frame.payload === '[DELETE]' || frame.originalKey === 'Delete') {
-                        // Delete doesn't affect displayed text in this simple implementation
-                        setDisplayedText(prev => prev);
-                    } else if (frame.payload === '[ENTER]' || frame.originalKey === 'Enter') {
-                        setDisplayedText(prev => prev + '\n');
-                    } else if (frame.payload === '[TAB]' || frame.originalKey === 'Tab') {
-                        setDisplayedText(prev => prev + '    '); // Tab as 4 spaces
-                    } else if (!frame.payload.startsWith('[')) {
-                        // Regular character
-                        setDisplayedText(prev => prev + frame.payload);
-                    }
+                // Use stored fieldText if available (most accurate)
+                if (frame.fieldText !== undefined) {
+                    setFieldTexts(prev => ({
+                        ...prev,
+                        [frame.target]: frame.fieldText
+                    }));
+                    console.log('[useReplay] Using stored fieldText', {
+                        target: frame.target,
+                        fieldText: frame.fieldText
+                    });
+                } else {
+                    // Fallback: reconstruct from payload
+                    setFieldTexts(prev => {
+                        const currentText = prev[frame.target] || '';
+                        let newText = currentText;
+                        
+                        if (frame.payload === '[BACKSPACE]' || frame.originalKey === 'Backspace') {
+                            newText = currentText.slice(0, -1);
+                        } else if (frame.payload === '[DELETE]' || frame.originalKey === 'Delete') {
+                            // Delete doesn't affect displayed text in this simple implementation
+                            newText = currentText;
+                        } else if (frame.payload === '[ENTER]' || frame.originalKey === 'Enter') {
+                            newText = currentText + '\n';
+                        } else if (frame.payload === '[TAB]' || frame.originalKey === 'Tab') {
+                            newText = currentText + '    '; // Tab as 4 spaces
+                        } else if (frame.payload && !frame.payload.startsWith('[')) {
+                            // Regular character
+                            newText = currentText + frame.payload;
+                        }
+                        
+                        console.log('[useReplay] Reconstructed text', {
+                            target: frame.target,
+                            oldText: currentText,
+                            newText: newText,
+                            payload: frame.payload
+                        });
+                        
+                        return {
+                            ...prev,
+                            [frame.target]: newText
+                        };
+                    });
                 }
+                
                 setCurrentAction({
                     type: 'keystroke',
                     payload: frame.payload,
@@ -183,17 +230,23 @@ export const useReplay = (actions = []) => {
         if (currentFrame >= frames.length) {
             reset();
         }
+        console.log('[useReplay] Playback started', {
+            currentFrame,
+            totalFrames: frames.length
+        });
         setIsPlaying(true);
     };
     
     const pause = () => {
+        console.log('[useReplay] Playback paused', { currentFrame });
         setIsPlaying(false);
     };
     
     const reset = () => {
+        console.log('[useReplay] Playback reset');
         setIsPlaying(false);
         setCurrentFrame(0);
-        setDisplayedText('');
+        setFieldTexts({});
         setCurrentAction(null);
         setMousePosition({ x: null, y: null });
         setScrollPosition({ x: 0, y: 0 });
@@ -221,8 +274,9 @@ export const useReplay = (actions = []) => {
     };
     
     const rebuildStateToFrame = (targetFrame) => {
+        console.log('[useReplay] Rebuilding state to frame', targetFrame);
         // Reset state
-        let text = '';
+        const fieldTexts = {};
         let lastMousePos = { x: null, y: null };
         let lastScrollPos = { x: 0, y: 0 };
         let lastViewportSize = { width: 0, height: 0 };
@@ -234,16 +288,25 @@ export const useReplay = (actions = []) => {
             
             switch (frame.type) {
                 case 'keystroke':
-                    if (frame.payload) {
+                    // Use stored fieldText if available (most accurate)
+                    if (frame.fieldText !== undefined) {
+                        fieldTexts[frame.target] = frame.fieldText;
+                    } else {
+                        // Fallback: reconstruct from payload
+                        const currentText = fieldTexts[frame.target] || '';
+                        let newText = currentText;
+                        
                         if (frame.payload === '[BACKSPACE]' || frame.originalKey === 'Backspace') {
-                            text = text.slice(0, -1);
+                            newText = currentText.slice(0, -1);
                         } else if (frame.payload === '[ENTER]' || frame.originalKey === 'Enter') {
-                            text += '\n';
+                            newText = currentText + '\n';
                         } else if (frame.payload === '[TAB]' || frame.originalKey === 'Tab') {
-                            text += '    ';
-                        } else if (!frame.payload.startsWith('[')) {
-                            text += frame.payload;
+                            newText = currentText + '    ';
+                        } else if (frame.payload && !frame.payload.startsWith('[')) {
+                            newText = currentText + frame.payload;
                         }
+                        
+                        fieldTexts[frame.target] = newText;
                     }
                     lastFocusedField = frame.target;
                     break;
@@ -278,11 +341,16 @@ export const useReplay = (actions = []) => {
             }
         }
         
-        setDisplayedText(text);
+        setFieldTexts(fieldTexts);
         setMousePosition(lastMousePos);
         setScrollPosition(lastScrollPos);
         setViewportSize(lastViewportSize);
         setFocusedField(lastFocusedField);
+        
+        console.log('[useReplay] State rebuilt', {
+            fieldTexts,
+            targetFrame
+        });
         
         // Process the target frame for visual indicators
         if (targetFrame >= 0 && targetFrame < frames.length) {
@@ -303,7 +371,7 @@ export const useReplay = (actions = []) => {
         totalDuration,
         isPlaying,
         playbackSpeed,
-        displayedText,
+        fieldTexts, // Return fieldTexts instead of displayedText
         currentAction,
         mousePosition,
         scrollPosition,

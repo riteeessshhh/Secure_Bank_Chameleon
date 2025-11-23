@@ -24,7 +24,7 @@ const ReplayPlayer = ({ actions = [], eventId, eventData }) => {
         totalDuration,
         isPlaying,
         playbackSpeed,
-        displayedText,
+        fieldTexts,
         currentAction,
         mousePosition,
         scrollPosition,
@@ -40,15 +40,18 @@ const ReplayPlayer = ({ actions = [], eventId, eventData }) => {
     } = useReplay(actions);
     
     const formAreaRef = useRef(null);
-    const textareaRef = useRef(null);
+    const userIdFieldRef = useRef(null);
+    const passwordFieldRef = useRef(null);
     const mouseCursorRef = useRef(null);
     
-    // Auto-scroll textarea as text is typed
+    // Log field texts for debugging
     useEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
-        }
-    }, [displayedText]);
+        console.log('[ReplayPlayer] Field texts updated', {
+            fieldTexts,
+            userid: fieldTexts.userid,
+            password: fieldTexts.password ? '***' : undefined
+        });
+    }, [fieldTexts]);
     
     // Update mouse cursor position
     useEffect(() => {
@@ -362,13 +365,16 @@ const ReplayPlayer = ({ actions = [], eventId, eventData }) => {
                         <label className="block text-sm text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1">
                             User ID
                         </label>
-                        <div className={`relative p-3 rounded border-2 transition-colors ${
-                            focusedField === 'userid' 
-                                ? 'border-yellow-500 bg-yellow-500/10' 
-                                : 'border-gray-700 dark:border-gray-700 light:border-gray-300 bg-gray-800 dark:bg-gray-800 light:bg-white'
-                        }`}>
-                            <div className="font-mono text-sm text-white dark:text-white light:text-gray-900 min-h-[20px]">
-                                {displayedText.split('\n')[0] || <span className="text-gray-500">Enter user ID...</span>}
+                        <div 
+                            ref={userIdFieldRef}
+                            className={`relative p-3 rounded border-2 transition-colors ${
+                                focusedField === 'userid' 
+                                    ? 'border-yellow-500 bg-yellow-500/10' 
+                                    : 'border-gray-700 dark:border-gray-700 light:border-gray-300 bg-gray-800 dark:bg-gray-800 light:bg-white'
+                            }`}
+                        >
+                            <div className="font-mono text-sm text-white dark:text-white light:text-gray-900 min-h-[20px] whitespace-pre-wrap">
+                                {fieldTexts.userid || <span className="text-gray-500">Enter user ID...</span>}
                                 {isPlaying && focusedField === 'userid' && (
                                     <span className="inline-block w-0.5 h-4 bg-white dark:bg-white light:bg-gray-900 ml-1 animate-pulse" />
                                 )}
@@ -380,13 +386,20 @@ const ReplayPlayer = ({ actions = [], eventId, eventData }) => {
                         <label className="block text-sm text-gray-400 dark:text-gray-400 light:text-gray-600 mb-1">
                             Password
                         </label>
-                        <div className={`relative p-3 rounded border-2 transition-colors ${
-                            focusedField === 'password' 
-                                ? 'border-yellow-500 bg-yellow-500/10' 
-                                : 'border-gray-700 dark:border-gray-700 light:border-gray-300 bg-gray-800 dark:bg-gray-800 light:bg-white'
-                        }`}>
-                            <div className="font-mono text-sm text-white dark:text-white light:text-gray-900 min-h-[20px]">
-                                {displayedText.split('\n')[1] || (displayedText.includes('\n') ? '' : '') || <span className="text-gray-500">Enter password...</span>}
+                        <div 
+                            ref={passwordFieldRef}
+                            className={`relative p-3 rounded border-2 transition-colors ${
+                                focusedField === 'password' 
+                                    ? 'border-yellow-500 bg-yellow-500/10' 
+                                    : 'border-gray-700 dark:border-gray-700 light:border-gray-300 bg-gray-800 dark:bg-gray-800 light:bg-white'
+                            }`}
+                        >
+                            <div className="font-mono text-sm text-white dark:text-white light:text-gray-900 min-h-[20px] whitespace-pre-wrap">
+                                {fieldTexts.password ? (
+                                    <span>{'•'.repeat(fieldTexts.password.length)}</span>
+                                ) : (
+                                    <span className="text-gray-500">Enter password...</span>
+                                )}
                                 {isPlaying && focusedField === 'password' && (
                                     <span className="inline-block w-0.5 h-4 bg-white dark:bg-white light:bg-gray-900 ml-1 animate-pulse" />
                                 )}
