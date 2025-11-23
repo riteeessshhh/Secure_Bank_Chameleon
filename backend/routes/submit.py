@@ -53,22 +53,28 @@ async def submit_attack(request: Request, payload: SubmitRequest):
     # 0. Check for Admin Credentials (Backdoor for Analyst) - MUST BE FIRST CHECK
     # The payload format is: "User ID: {userId}, Password: {password}"
     input_text = payload.input
-    print(f"[DEBUG] ========== ADMIN CHECK ==========")
-    print(f"[DEBUG] Input text: {input_text}")
+    print(f"\n[DEBUG] ========== ADMIN CHECK START ==========")
+    print(f"[DEBUG] Raw input text: '{input_text}'")
+    print(f"[DEBUG] Input text type: {type(input_text)}")
     print(f"[DEBUG] Input text length: {len(input_text)}")
     
     # Normalize input for easier matching
-    input_lower = input_text.lower()
+    input_lower = input_text.lower().strip()
     
-    # Check for admin email (case-insensitive)
-    has_admin_email = "tanay@chameleon.com" in input_lower or "tanay@chameleon.com" in input_text
+    # Check for admin email (case-insensitive, handle variations)
+    admin_email_variants = [
+        "tanay@chameleon.com",
+        "tanay@chameleon",
+        "tanay"
+    ]
+    has_admin_email = any(variant in input_lower for variant in admin_email_variants)
     
-    # Check for admin password
+    # Check for admin password (case-insensitive)
     has_admin_password = "admin" in input_lower
     
-    # Check for the format indicators
-    has_user_id_label = "user id:" in input_lower or "userid:" in input_lower
-    has_password_label = "password:" in input_lower
+    # Check for the format indicators (flexible matching)
+    has_user_id_label = any(label in input_lower for label in ["user id:", "userid:", "user id", "username:", "email:"])
+    has_password_label = any(label in input_lower for label in ["password:", "pass:", "pwd:"])
     
     print(f"[DEBUG] Admin email found: {has_admin_email}")
     print(f"[DEBUG] Admin password found: {has_admin_password}")
@@ -76,11 +82,11 @@ async def submit_attack(request: Request, payload: SubmitRequest):
     print(f"[DEBUG] Password label found: {has_password_label}")
     
     # Admin check: email AND password must be present
-    # Format labels are helpful but not strictly required for matching
+    # This is a simple check - if both are present, grant access
     if has_admin_email and has_admin_password:
-        print("[DEBUG] ✓ Admin credentials detected - GRANTING ACCESS")
-        print("[DEBUG] Returning admin response with action: redirect")
-        return {
+        print("[DEBUG] ✓✓✓ ADMIN CREDENTIALS DETECTED - GRANTING ACCESS ✓✓✓")
+        print("[DEBUG] Returning admin response with action: 'redirect'")
+        admin_response = {
             "received": True,
             "id": None,
             "hash": None,
@@ -99,10 +105,15 @@ async def submit_attack(request: Request, payload: SubmitRequest):
             "confidence": 1.0,
             "merkle_root": merkle.get_root() if hasattr(merkle, 'get_root') else ""
         }
+        print(f"[DEBUG] Admin response: {admin_response}")
+        print(f"[DEBUG] ========== ADMIN CHECK END (RETURNING) ==========\n")
+        return admin_response
     else:
-        print("[DEBUG] ✗ Admin credentials NOT found - continuing with attack detection")
+        print("[DEBUG] ✗ Admin credentials NOT found")
+        print(f"[DEBUG] Email check: {has_admin_email}, Password check: {has_admin_password}")
+        print(f"[DEBUG] Continuing with attack detection...")
     
-    print(f"[DEBUG] ========== END ADMIN CHECK ==========")
+    print(f"[DEBUG] ========== ADMIN CHECK END (CONTINUING) ==========\n")
     
     # Detect attack type
     attack_type, confidence = model.predict(payload.input)
