@@ -53,18 +53,32 @@ async def submit_attack(request: Request, payload: SubmitRequest):
     # Detect attack type
     attack_type, confidence = model.predict(payload.input)
     
-    # Fallback pattern detection
+    # Fallback pattern detection - only override if model is uncertain AND patterns are clearly malicious
+    # Don't override if model confidently says Benign
     input_lower = payload.input.lower()
-    sqli_patterns = ["' or", "or 1=1", "union select", "drop table", "'; --"]
-    xss_patterns = ["<script", "javascript:", "onerror=", "<img src"]
+    sqli_patterns = ["' or", "or 1=1", "union select", "drop table", "'; --", "or '1'='1", "admin' --", "union all select"]
+    xss_patterns = ["<script", "javascript:", "onerror=", "onload=", "<img src", "<svg", "onclick=", "alert("]
     
-    if attack_type == "Benign" and confidence < 0.8:
+    # Only apply pattern detection if:
+    # 1. Model says Benign but confidence is low (< 0.6), OR
+    # 2. Model prediction is uncertain (confidence < 0.7)
+    # This prevents normal inputs from being misclassified
+    if (attack_type == "Benign" and confidence < 0.6) or (confidence < 0.7 and attack_type != "Benign"):
+        # Check for clear SQLi patterns (more specific patterns)
         if any(pattern in input_lower for pattern in sqli_patterns):
+            print(f"[DEBUG] Pattern-based detection: SQLi pattern found, overriding model")
             attack_type = "SQLi"
             confidence = 0.9
+        # Check for clear XSS patterns
         elif any(pattern in input_lower for pattern in xss_patterns):
+            print(f"[DEBUG] Pattern-based detection: XSS pattern found, overriding model")
             attack_type = "XSS"
             confidence = 0.9
+        # If no clear patterns found and model says Benign, keep it as Benign
+        elif attack_type == "Benign":
+            print(f"[DEBUG] Keeping Benign classification for normal input")
+            attack_type = "Benign"
+            confidence = max(confidence, 0.7)  # Boost confidence for normal inputs
     
     # Get deception strategy
     strategy_func = deception.decide_strategy(attack_type)

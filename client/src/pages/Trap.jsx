@@ -100,44 +100,45 @@ const Trap = () => {
       // Get recorded actions
       const actions = DEMO_MODE && isRecording ? sessionRecorder.getActions() : [];
 
-      // Always use /api/analyze endpoint (submit endpoint can be used separately)
-      // For now, we'll use analyze and store actions separately if needed
-      const response = await axios.post(`${API_URL}/api/analyze`, {
-        input_text: payload
+      // Use /api/submit endpoint which handles both analysis and logging
+      // This prevents duplicate log entries
+      const response = await axios.post(`${API_URL}/api/submit`, {
+        input: payload,
+        username: userId,
+        ip_address: '127.0.0.1',
+        actions: actions
       });
 
-      // If we have actions and the request was successful, optionally send to submit endpoint
-      // This is optional - actions can be stored separately
-      if (actions.length > 0 && response.data) {
-        try {
-          // Optionally send actions to submit endpoint for storage
-          await axios.post(`${API_URL}/api/submit`, {
-            input: payload,
-            username: userId,
-            ip_address: '127.0.0.1',
-            actions: actions
-          });
-        } catch (submitError) {
-          // Don't fail the main request if submit fails
-          console.warn('Failed to store actions:', submitError);
+      // Extract response data (submit endpoint returns different structure)
+      const responseData = {
+        response: {
+          status: 200,
+          message: response.data?.response?.message || "Processed",
+          deception: response.data?.response?.deception || "None",
+          action: response.data?.response?.action || "none"
+        },
+        forensics: {
+          detected_type: response.data?.forensics?.detected_type || response.data?.attack_type || "Unknown",
+          confidence: response.data?.forensics?.confidence || response.data?.confidence || 0.5,
+          merkle_root: response.data?.forensics?.merkle_root || response.data?.merkle_root || ""
         }
-      }
+      };
 
       // Debug: Log the response to see what we're getting
-      console.log('Backend Response:', response.data);
+      console.log('Backend Response:', responseData);
       console.log('Response structure:', {
-        response: response.data.response,
-        forensics: response.data.forensics
+        response: responseData.response,
+        forensics: responseData.forensics
       });
 
       // Check for redirect action (Admin Login)
-      if (response.data.response?.action === 'redirect') {
+      if (responseData.response?.action === 'redirect') {
         navigate('/dashboard');
         return;
       }
 
       // Check for fake dashboard redirect (Attacker Tarpit)
-      if (response.data.response?.action === 'fake_dashboard') {
+      if (responseData.response?.action === 'fake_dashboard') {
         // Show loading page first
         navigate('/loading');
         // Then redirect to fake dashboard after 5 seconds

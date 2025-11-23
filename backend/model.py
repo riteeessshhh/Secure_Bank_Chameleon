@@ -9,10 +9,11 @@ class MLModel:
             self.model = None
             print(f"Warning: Model not found at {model_path}")
 
-    def predict(self, text, confidence_threshold=0.7):
+    def predict(self, text, confidence_threshold=0.6):
         """
         Predict attack type with confidence threshold to reduce false positives.
         If confidence is below threshold, classify as Benign.
+        Lower threshold (0.6) to better handle normal inputs as benign.
         """
         if not self.model:
             return "Benign", 1.0  # Default fallback

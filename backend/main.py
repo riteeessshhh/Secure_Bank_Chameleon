@@ -120,21 +120,31 @@ async def analyze(request: AnalyzeRequest):
     print(f"[DEBUG] Detected: {attack_type}, Confidence: {confidence}")
     
     # Fallback: Check for common SQLi/XSS patterns if model doesn't detect them
+    # Only override if model is uncertain AND patterns are clearly malicious
     input_lower = request.input_text.lower()
-    sqli_patterns = ["' or", "or 1=1", "union select", "drop table", "'; --", "or '1'='1", "admin' --"]
-    xss_patterns = ["<script", "javascript:", "onerror=", "onload=", "<img src", "<svg"]
+    sqli_patterns = ["' or", "or 1=1", "union select", "drop table", "'; --", "or '1'='1", "admin' --", "union all select"]
+    xss_patterns = ["<script", "javascript:", "onerror=", "onload=", "<img src", "<svg", "onclick=", "alert("]
     
-    if attack_type == "Benign" and confidence < 0.8:
-        # Check for SQLi patterns
+    # Only apply pattern detection if:
+    # 1. Model says Benign but confidence is low (< 0.6), OR
+    # 2. Model prediction is uncertain (confidence < 0.7)
+    # This prevents normal inputs from being misclassified
+    if (attack_type == "Benign" and confidence < 0.6) or (confidence < 0.7 and attack_type != "Benign"):
+        # Check for clear SQLi patterns
         if any(pattern in input_lower for pattern in sqli_patterns):
             print(f"[DEBUG] Pattern-based detection: SQLi pattern found, overriding model")
             attack_type = "SQLi"
             confidence = 0.9
-        # Check for XSS patterns
+        # Check for clear XSS patterns
         elif any(pattern in input_lower for pattern in xss_patterns):
             print(f"[DEBUG] Pattern-based detection: XSS pattern found, overriding model")
             attack_type = "XSS"
             confidence = 0.9
+        # If no clear patterns found and model says Benign, keep it as Benign
+        elif attack_type == "Benign":
+            print(f"[DEBUG] Keeping Benign classification for normal input")
+            attack_type = "Benign"
+            confidence = max(confidence, 0.7)  # Boost confidence for normal inputs
     
     # 2. Deceive
     strategy_func = deception.decide_strategy(attack_type)
