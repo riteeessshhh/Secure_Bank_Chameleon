@@ -178,6 +178,12 @@ class SessionRecorder {
             this.actions = [];
         }
         
+        // Handle null/undefined key
+        if (!key) {
+            console.warn('[SessionRecorder] Received null/undefined key, skipping');
+            return;
+        }
+        
         // In production mode, skip password field keystrokes
         if (this.recordingMode === 'production' && isPassword) {
             console.log('[SessionRecorder] Skipping password keystroke (production mode)');
@@ -190,7 +196,7 @@ class SessionRecorder {
         }
         
         // Handle special keys and update field text
-        let normalizedKey = key;
+        let normalizedKey = String(key); // Ensure it's a string
         let keyType = 'character';
         let currentFieldText = this.fieldTexts[target] || '';
         
