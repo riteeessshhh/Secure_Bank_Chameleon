@@ -1,8 +1,13 @@
 import sqlite3
 import datetime
+import os
 
 class Database:
-    def __init__(self, db_name="backend/logs.db"):
+    def __init__(self, db_name=None):
+        # Use environment variable or default path
+        if db_name is None:
+            # For Render, use absolute path in /tmp or current directory
+            db_name = os.getenv("DATABASE_PATH", "logs.db")
         self.db_name = db_name
         self.init_db()
 

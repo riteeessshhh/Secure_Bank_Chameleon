@@ -5,6 +5,7 @@ import axios from 'axios';
 import ReplayPlayer from '../components/ReplayPlayer';
 import AiExplainPanel from '../components/AiExplainPanel';
 import { useTheme } from '../contexts/ThemeContext';
+import { API_URL } from '../config/api';
 
 /**
  * Incident Replay Page
@@ -27,7 +28,7 @@ const IncidentReplay = () => {
                 setError(null);
                 
                 // Get event from logs endpoint (most reliable)
-                const logsResponse = await axios.get('http://localhost:5000/api/logs');
+                const logsResponse = await axios.get(`${API_URL}/api/logs`);
                 const event = logsResponse.data.logs.find(log => log.id === parseInt(eventId));
                 
                 if (event) {
@@ -35,14 +36,14 @@ const IncidentReplay = () => {
                     let actions = [];
                     try {
                         // Try the events endpoint first
-                        const eventsResponse = await axios.get(`http://localhost:5000/api/events/${eventId}`);
+                        const eventsResponse = await axios.get(`${API_URL}/api/events/${eventId}`);
                         if (eventsResponse.data && eventsResponse.data.actions) {
                             actions = eventsResponse.data.actions;
                         }
                     } catch (eventsErr) {
                         // If that fails, try actions endpoint
                         try {
-                            const actionsResponse = await axios.get(`http://localhost:5000/api/events/${eventId}/actions`);
+                            const actionsResponse = await axios.get(`${API_URL}/api/events/${eventId}/actions`);
                             if (actionsResponse.data && actionsResponse.data.actions) {
                                 actions = actionsResponse.data.actions;
                             }

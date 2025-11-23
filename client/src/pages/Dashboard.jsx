@@ -7,6 +7,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import MerkleBox from '../components/MerkleBox';
 import AiExplainPanel from '../components/AiExplainPanel';
 import jsPDF from 'jspdf';
+import { API_URL } from '../config/api';
 
 const Dashboard = () => {
     const { theme, toggleTheme } = useTheme();
@@ -25,7 +26,7 @@ const Dashboard = () => {
 
     const fetchLogs = async () => {
         try {
-            const response = await axios.get('http://localhost:5000/api/logs');
+            const response = await axios.get(`${API_URL}/api/logs`);
             setLogs(response.data.logs);
             setMerkleRoot(response.data.merkle_root);
             calculateStats(response.data.logs);
@@ -37,10 +38,10 @@ const Dashboard = () => {
     const fetchStats = async () => {
         try {
             const [timeSeriesRes, topIPsRes, strategyRes, confidenceRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/stats/time-series'),
-                axios.get('http://localhost:5000/api/stats/top-ips'),
-                axios.get('http://localhost:5000/api/stats/strategies'),
-                axios.get('http://localhost:5000/api/stats/confidence')
+                axios.get(`${API_URL}/api/stats/time-series`),
+                axios.get(`${API_URL}/api/stats/top-ips`),
+                axios.get(`${API_URL}/api/stats/strategies`),
+                axios.get(`${API_URL}/api/stats/confidence`)
             ]);
             setTimeSeries(timeSeriesRes.data);
             setTopIPs(topIPsRes.data);
@@ -518,7 +519,7 @@ const Dashboard = () => {
                                         <button
                                             onClick={async () => {
                                                 try {
-                                                    const response = await fetch(`http://localhost:5000/api/report/${ipData.ip}`);
+                                                    const response = await fetch(`${API_URL}/api/report/${ipData.ip}`);
                                                     if (response.ok) {
                                                         const blob = await response.blob();
                                                         const url = window.URL.createObjectURL(blob);

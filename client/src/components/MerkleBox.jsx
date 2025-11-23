@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, RefreshCw, Check, Copy } from 'lucide-react';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 
 const MerkleBox = () => {
     const [merkleData, setMerkleData] = useState({ merkleRoot: null, count: 0, batchId: '', updatedAt: '' });
@@ -11,7 +12,7 @@ const MerkleBox = () => {
     const fetchMerkleRoot = async () => {
         try {
             setLoading(true);
-            const response = await axios.get('http://localhost:5000/api/merkle');
+            const response = await axios.get(`${API_URL}/api/merkle`);
             console.log('Merkle API Response:', response.data);
             setMerkleData(response.data);
         } catch (error) {

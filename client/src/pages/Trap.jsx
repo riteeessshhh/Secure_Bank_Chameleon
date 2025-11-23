@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, ShieldCheck, Sun, Moon, Circle } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import sessionRecorder from '../utils/sessionRecorder';
+import { API_URL } from '../config/api';
 
 // ⚠️ DEMO MODE: Set to false in production to disable keystroke capture
 const DEMO_MODE = true;
@@ -97,7 +98,7 @@ const Trap = () => {
 
       // Always use /api/analyze endpoint (submit endpoint can be used separately)
       // For now, we'll use analyze and store actions separately if needed
-      const response = await axios.post('http://localhost:5000/api/analyze', {
+      const response = await axios.post(`${API_URL}/api/analyze`, {
         input_text: payload
       });
 
@@ -106,7 +107,7 @@ const Trap = () => {
       if (actions.length > 0 && response.data) {
         try {
           // Optionally send actions to submit endpoint for storage
-          await axios.post('http://localhost:5000/api/submit', {
+          await axios.post(`${API_URL}/api/submit`, {
             input: payload,
             username: userId,
             ip_address: '127.0.0.1',
@@ -177,7 +178,7 @@ const Trap = () => {
       } else if (error.response?.status >= 500) {
         errorMessage = "Server error. Please try again later.";
       } else if (error.message === 'Network Error' || error.code === 'ECONNREFUSED') {
-        errorMessage = "Cannot connect to server. Please ensure the backend is running on http://localhost:5000";
+        errorMessage = `Cannot connect to server. Please ensure the backend is running on ${API_URL}`;
       }
 
       setMessage({

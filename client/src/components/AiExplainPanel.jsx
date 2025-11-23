@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Brain, RefreshCw, Copy, Check, AlertTriangle, Shield, FileText, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 
 /**
  * AI Explain Panel Component
@@ -30,10 +31,10 @@ const AiExplainPanel = ({ eventId, eventData, onAddToReport }) => {
             
             if (eventId) {
                 // Use GET endpoint for event ID
-                response = await axios.get(`http://localhost:5000/api/ai/explain/${eventId}`);
+                response = await axios.get(`${API_URL}/api/ai/explain/${eventId}`);
             } else {
                 // Use POST endpoint for direct event data
-                response = await axios.post('http://localhost:5000/api/ai/explain', {
+                response = await axios.post(`${API_URL}/api/ai/explain`, {
                     event: eventData
                 });
             }

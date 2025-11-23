@@ -5,15 +5,16 @@
  */
 
 import axios from 'axios';
+import { API_URL } from '../config/api';
 
 /**
  * Download incident report PDF for a specific IP address
  * 
  * @param {string} ipAddress - IP address to generate report for
- * @param {string} apiUrl - Backend API URL (default: http://localhost:5000)
+ * @param {string} apiUrl - Backend API URL (defaults to API_URL from config)
  * @returns {Promise<{success: boolean, filename?: string}>}
  */
-export const downloadReport = async (ipAddress, apiUrl = 'http://localhost:5000') => {
+export const downloadReport = async (ipAddress, apiUrl = API_URL) => {
     try {
         const response = await axios({
             url: `${apiUrl}/api/report/${ipAddress}`,
