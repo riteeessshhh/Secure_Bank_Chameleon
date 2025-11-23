@@ -480,6 +480,22 @@ const Dashboard = () => {
                     </div>
                 </div>
             </header>
+            
+            {/* Error Message Banner */}
+            {errorMessage && (
+                <div className="mb-4 bg-red-900/50 border border-red-700 rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-red-400" />
+                        <span className="text-red-300 text-sm">{errorMessage}</span>
+                    </div>
+                    <button
+                        onClick={() => setErrorMessage(null)}
+                        className="text-red-400 hover:text-red-300 text-sm"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
 
             {/* Merkle Box - Tamper Evidence */}
             <div className="mb-4 sm:mb-6">
