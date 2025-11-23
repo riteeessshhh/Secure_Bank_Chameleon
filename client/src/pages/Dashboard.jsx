@@ -755,7 +755,9 @@ const Dashboard = () => {
                                         }`}>{log.attack_type}</span>
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
                                     <span className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">Confidence: <span className="text-yellow-400 dark:text-yellow-400 light:text-yellow-600 font-bold">{((log.confidence || 0) * 100).toFixed(1)}%</span></span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600" title={new Date(log.timestamp).toLocaleString()}>
+                                        {new Date(log.timestamp).toLocaleString()}
+                                    </span>
                                 </div>
                             </div>
                             <p className="text-xs sm:text-sm mt-1 text-gray-300 dark:text-gray-300 light:text-gray-700 break-all mb-2">{log.input_payload}</p>

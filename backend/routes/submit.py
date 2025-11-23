@@ -4,7 +4,7 @@ Enhanced submit endpoint that accepts and stores attacker session actions.
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.database import Database
 from backend.utils.hash import hash_event
 import json
@@ -77,7 +77,7 @@ async def submit_attack(request: Request, payload: SubmitRequest):
         'attack_type': attack_type,
         'confidence': confidence,
         'deception_strategy': response['deception'],
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': datetime.now(timezone.utc).isoformat(),
         'user_agent': payload.ua,
         'headers': payload.headers or {},
         'actions': [action.dict() for action in (payload.actions or [])]  # Store actions

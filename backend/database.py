@@ -1,6 +1,7 @@
 import sqlite3
 import datetime
 import os
+from datetime import timezone
 
 class Database:
     def __init__(self, db_name=None):
@@ -36,7 +37,8 @@ class Database:
     def log_attack(self, ip, payload, attack_type, confidence, strategy, merkle_hash):
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
-        timestamp = datetime.datetime.now().isoformat()
+        # Use UTC timezone for consistent timestamps across timezones
+        timestamp = datetime.datetime.now(timezone.utc).isoformat()
         c.execute("INSERT INTO logs (timestamp, ip_address, input_payload, attack_type, confidence, deception_strategy, merkle_hash) VALUES (?, ?, ?, ?, ?, ?, ?)",
                   (timestamp, ip, payload, attack_type, confidence, strategy, merkle_hash))
         log_id = c.lastrowid
@@ -56,9 +58,10 @@ class Database:
     def save_actions(self, event_id, actions):
         """Save session actions for an event"""
         import json
+        from datetime import timezone
         conn = sqlite3.connect(self.db_name)
         c = conn.cursor()
-        timestamp = datetime.datetime.now().isoformat()
+        timestamp = datetime.datetime.now(timezone.utc).isoformat()
         actions_json = json.dumps(actions)
         c.execute("INSERT INTO session_actions (event_id, actions_json, created_at) VALUES (?, ?, ?)",
                   (event_id, actions_json, timestamp))

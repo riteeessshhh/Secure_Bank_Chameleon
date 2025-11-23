@@ -231,10 +231,11 @@ def get_top_ips():
 def get_time_series():
     """Get time-series data for last 24 hours"""
     import datetime
+    from datetime import timezone
     logs = db.get_logs()
     
-    # Get last 24 hours
-    now = datetime.datetime.now()
+    # Get last 24 hours (UTC)
+    now = datetime.datetime.now(timezone.utc)
     hours = []
     for i in range(24):
         hour_time = now - datetime.timedelta(hours=23-i)

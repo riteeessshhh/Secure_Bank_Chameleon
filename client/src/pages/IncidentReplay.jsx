@@ -193,7 +193,7 @@ const IncidentReplay = () => {
                                 <Clock className={`w-5 h-5 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`} />
                                 <div>
                                     <div className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-600'}`}>Timestamp</div>
-                                    <div className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                                    <div className={`text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`} title={event.timestamp}>
                                         {new Date(event.timestamp).toLocaleString()}
                                     </div>
                                 </div>

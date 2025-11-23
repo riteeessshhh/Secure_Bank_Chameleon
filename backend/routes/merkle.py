@@ -4,7 +4,7 @@ Merkle root API endpoints for tamper-evidence verification.
 from fastapi import APIRouter
 from backend.database import Database
 from backend.blockchain import MerkleTree
-from datetime import datetime
+from datetime import datetime, timezone
 
 router = APIRouter()
 db = Database()
@@ -31,7 +31,7 @@ def get_merkle_root():
             "merkleRoot": None,
             "count": 0,
             "batchId": "batch-0",
-            "updatedAt": datetime.now().isoformat()
+            "updatedAt": datetime.now(timezone.utc).isoformat()
         }
     
     # Recompute Merkle root from all log hashes
