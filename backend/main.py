@@ -176,6 +176,21 @@ def get_logs():
         "merkle_root": merkle.get_root()
     }
 
+@app.get("/")
+def root():
+    return {
+        "message": "Chameleon Deception System API",
+        "status": "running",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/api/health",
+            "analyze": "/api/analyze (POST)",
+            "logs": "/api/logs",
+            "merkle": "/api/merkle",
+            "docs": "/docs"
+        }
+    }
+
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
