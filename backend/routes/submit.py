@@ -124,10 +124,25 @@ async def submit_attack(request: Request, payload: SubmitRequest):
     #     'shortSummary': f"{attack_type} attack detected"
     # })
     
+    # Return response in same format as /api/analyze for compatibility
     return {
         "received": True,
         "id": log_id,
-        "hash": event_hash
+        "hash": event_hash,
+        "response": {
+            "status": 200,
+            "message": "Attack processed",
+            "deception": response['deception'],
+            "action": response.get('action', 'none')
+        },
+        "forensics": {
+            "detected_type": attack_type,
+            "confidence": confidence,
+            "merkle_root": merkle.get_root() if hasattr(merkle, 'get_root') else event_hash
+        },
+        "attack_type": attack_type,
+        "confidence": confidence,
+        "merkle_root": merkle.get_root() if hasattr(merkle, 'get_root') else event_hash
     }
 
 
