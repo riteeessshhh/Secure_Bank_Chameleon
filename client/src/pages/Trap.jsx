@@ -149,7 +149,7 @@ const Trap = () => {
       }
 
       // Check for slow loading then fake dashboard (SQLi/XSS deception)
-      if (response.data.response?.action === 'slow_loading_then_fake_dashboard') {
+      if (responseData.response?.action === 'slow_loading_then_fake_dashboard') {
         console.log('Detected SQLi/XSS - redirecting to loading page');
         // Navigate to loading page which will handle the flow
         navigate('/loading');
@@ -157,7 +157,7 @@ const Trap = () => {
       }
 
       // Also check if attack type is SQLi or XSS from forensics
-      const attackType = response.data.forensics?.detected_type;
+      const attackType = responseData.forensics?.detected_type;
       if (attackType === 'SQLi' || attackType === 'XSS') {
         console.log(`Detected ${attackType} attack - redirecting to loading page`);
         navigate('/loading');
@@ -165,11 +165,11 @@ const Trap = () => {
       }
 
       // Simulate processing delay if not already handled by backend
-      if (response.data.response?.deception === 'Artificial Network Lag') {
+      if (responseData.response?.deception === 'Artificial Network Lag') {
         // The backend already delayed, but we can add visual effect
       }
 
-      setMessage(response.data.response);
+      setMessage(responseData.response);
       setLoading(false);
     } catch (error) {
       console.error('Login error:', error);
