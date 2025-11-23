@@ -55,16 +55,16 @@ async def submit_attack(request: Request, payload: SubmitRequest):
     input_text = payload.input
     print(f"[DEBUG] Checking admin credentials in input: {input_text}")
     
-    # Check for exact admin credentials pattern
-    if "tanay@chameleon.com" in input_text and "admin" in input_text.lower():
-        # Check for the exact format: "User ID: tanay@chameleon.com, Password: admin"
-        # Also handle variations like "User ID:tanay@chameleon.com" or "Password:admin"
-        has_user_id = "User ID: tanay@chameleon.com" in input_text or "User ID:tanay@chameleon.com" in input_text
-        has_password = "Password: admin" in input_text or "Password:admin" in input_text or "Password: admin" in input_text
-        
-        # Also check if both components are present (more flexible matching)
-        if (has_user_id and has_password) or \
-           ("tanay@chameleon.com" in input_text and "Password:" in input_text and "admin" in input_text.lower()):
+    # Check for admin credentials - flexible matching
+    # Format: "User ID: tanay@chameleon.com, Password: admin"
+    has_admin_email = "tanay@chameleon.com" in input_text
+    has_admin_password = "admin" in input_text.lower() and "password" in input_text.lower()
+    
+    # More specific check: ensure both email and password are present with correct format
+    if has_admin_email and has_admin_password:
+        # Check if it's in the expected format (with "User ID:" and "Password:" labels)
+        if ("User ID:" in input_text or "user id:" in input_text.lower()) and \
+           ("Password:" in input_text or "password:" in input_text.lower()):
             print("[DEBUG] Admin credentials detected - granting access")
             return {
                 "received": True,
