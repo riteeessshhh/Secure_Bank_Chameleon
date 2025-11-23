@@ -50,41 +50,59 @@ async def submit_attack(request: Request, payload: SubmitRequest):
     deception = DeceptionEngine()
     merkle = MerkleTree()
     
-    # 0. Check for Admin Credentials (Backdoor for Analyst)
+    # 0. Check for Admin Credentials (Backdoor for Analyst) - MUST BE FIRST CHECK
     # The payload format is: "User ID: {userId}, Password: {password}"
     input_text = payload.input
-    print(f"[DEBUG] Checking admin credentials in input: {input_text}")
+    print(f"[DEBUG] ========== ADMIN CHECK ==========")
+    print(f"[DEBUG] Input text: {input_text}")
+    print(f"[DEBUG] Input text length: {len(input_text)}")
     
-    # Check for admin credentials - flexible matching
-    # Format: "User ID: tanay@chameleon.com, Password: admin"
-    has_admin_email = "tanay@chameleon.com" in input_text
-    has_admin_password = "admin" in input_text.lower() and "password" in input_text.lower()
+    # Normalize input for easier matching
+    input_lower = input_text.lower()
     
-    # More specific check: ensure both email and password are present with correct format
+    # Check for admin email (case-insensitive)
+    has_admin_email = "tanay@chameleon.com" in input_lower or "tanay@chameleon.com" in input_text
+    
+    # Check for admin password
+    has_admin_password = "admin" in input_lower
+    
+    # Check for the format indicators
+    has_user_id_label = "user id:" in input_lower or "userid:" in input_lower
+    has_password_label = "password:" in input_lower
+    
+    print(f"[DEBUG] Admin email found: {has_admin_email}")
+    print(f"[DEBUG] Admin password found: {has_admin_password}")
+    print(f"[DEBUG] User ID label found: {has_user_id_label}")
+    print(f"[DEBUG] Password label found: {has_password_label}")
+    
+    # Admin check: email AND password must be present
+    # Format labels are helpful but not strictly required for matching
     if has_admin_email and has_admin_password:
-        # Check if it's in the expected format (with "User ID:" and "Password:" labels)
-        if ("User ID:" in input_text or "user id:" in input_text.lower()) and \
-           ("Password:" in input_text or "password:" in input_text.lower()):
-            print("[DEBUG] Admin credentials detected - granting access")
-            return {
-                "received": True,
-                "id": None,
-                "hash": None,
-                "response": {
-                    "status": 200,
-                    "message": "Login Successful",
-                    "deception": "None",
-                    "action": "redirect"
-                },
-                "forensics": {
-                    "detected_type": "Authorized Access",
-                    "confidence": 1.0,
-                    "merkle_root": merkle.get_root() if hasattr(merkle, 'get_root') else ""
-                },
-                "attack_type": "Authorized Access",
+        print("[DEBUG] ✓ Admin credentials detected - GRANTING ACCESS")
+        print("[DEBUG] Returning admin response with action: redirect")
+        return {
+            "received": True,
+            "id": None,
+            "hash": None,
+            "response": {
+                "status": 200,
+                "message": "Login Successful",
+                "deception": "None",
+                "action": "redirect"  # This should trigger navigation to /dashboard
+            },
+            "forensics": {
+                "detected_type": "Authorized Access",
                 "confidence": 1.0,
                 "merkle_root": merkle.get_root() if hasattr(merkle, 'get_root') else ""
-            }
+            },
+            "attack_type": "Authorized Access",
+            "confidence": 1.0,
+            "merkle_root": merkle.get_root() if hasattr(merkle, 'get_root') else ""
+        }
+    else:
+        print("[DEBUG] ✗ Admin credentials NOT found - continuing with attack detection")
+    
+    print(f"[DEBUG] ========== END ADMIN CHECK ==========")
     
     # Detect attack type
     attack_type, confidence = model.predict(payload.input)

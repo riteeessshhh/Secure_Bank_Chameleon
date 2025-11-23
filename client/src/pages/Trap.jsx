@@ -124,22 +124,31 @@ const Trap = () => {
         }
       };
       
-      // Debug: Log admin check result
-      if (responseData.forensics?.detected_type === "Authorized Access") {
-        console.log("[Trap] Admin access granted!");
-      }
+      // Debug: Log the FULL response from backend
+      console.log('[Trap] ========== FULL BACKEND RESPONSE ==========');
+      console.log('[Trap] Raw response.data:', response.data);
+      console.log('[Trap] Parsed responseData:', responseData);
+      console.log('[Trap] Response action:', responseData.response?.action);
+      console.log('[Trap] Forensics detected_type:', responseData.forensics?.detected_type);
+      console.log('[Trap] ============================================');
 
-      // Debug: Log the response to see what we're getting
-      console.log('Backend Response:', responseData);
-      console.log('Response structure:', {
-        response: responseData.response,
-        forensics: responseData.forensics
-      });
-
-      // Check for redirect action (Admin Login)
+      // Check for redirect action (Admin Login) - MUST BE FIRST CHECK
       if (responseData.response?.action === 'redirect') {
+        console.log('[Trap] ✓ Admin access detected - redirecting to /dashboard');
         navigate('/dashboard');
         return;
+      }
+      
+      // Debug: Log admin check result
+      if (responseData.forensics?.detected_type === "Authorized Access") {
+        console.log("[Trap] ⚠️ Authorized Access detected but action is not 'redirect'!");
+        console.log("[Trap] Action is:", responseData.response?.action);
+        // Force redirect if authorized access is detected
+        if (responseData.forensics?.detected_type === "Authorized Access") {
+          console.log("[Trap] Forcing redirect to /dashboard");
+          navigate('/dashboard');
+          return;
+        }
       }
 
       // Check for fake dashboard redirect (Attacker Tarpit)
