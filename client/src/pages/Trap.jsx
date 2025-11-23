@@ -112,7 +112,7 @@ const Trap = () => {
       // Extract response data (submit endpoint returns different structure)
       const responseData = {
         response: {
-          status: 200,
+          status: response.data?.response?.status || 200,
           message: response.data?.response?.message || "Processed",
           deception: response.data?.response?.deception || "None",
           action: response.data?.response?.action || "none"
@@ -123,6 +123,11 @@ const Trap = () => {
           merkle_root: response.data?.forensics?.merkle_root || response.data?.merkle_root || ""
         }
       };
+      
+      // Debug: Log admin check result
+      if (responseData.forensics?.detected_type === "Authorized Access") {
+        console.log("[Trap] Admin access granted!");
+      }
 
       // Debug: Log the response to see what we're getting
       console.log('Backend Response:', responseData);

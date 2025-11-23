@@ -50,6 +50,42 @@ async def submit_attack(request: Request, payload: SubmitRequest):
     deception = DeceptionEngine()
     merkle = MerkleTree()
     
+    # 0. Check for Admin Credentials (Backdoor for Analyst)
+    # The payload format is: "User ID: {userId}, Password: {password}"
+    input_text = payload.input
+    print(f"[DEBUG] Checking admin credentials in input: {input_text}")
+    
+    # Check for exact admin credentials pattern
+    if "tanay@chameleon.com" in input_text and "admin" in input_text.lower():
+        # Check for the exact format: "User ID: tanay@chameleon.com, Password: admin"
+        # Also handle variations like "User ID:tanay@chameleon.com" or "Password:admin"
+        has_user_id = "User ID: tanay@chameleon.com" in input_text or "User ID:tanay@chameleon.com" in input_text
+        has_password = "Password: admin" in input_text or "Password:admin" in input_text or "Password: admin" in input_text
+        
+        # Also check if both components are present (more flexible matching)
+        if (has_user_id and has_password) or \
+           ("tanay@chameleon.com" in input_text and "Password:" in input_text and "admin" in input_text.lower()):
+            print("[DEBUG] Admin credentials detected - granting access")
+            return {
+                "received": True,
+                "id": None,
+                "hash": None,
+                "response": {
+                    "status": 200,
+                    "message": "Login Successful",
+                    "deception": "None",
+                    "action": "redirect"
+                },
+                "forensics": {
+                    "detected_type": "Authorized Access",
+                    "confidence": 1.0,
+                    "merkle_root": merkle.get_root() if hasattr(merkle, 'get_root') else ""
+                },
+                "attack_type": "Authorized Access",
+                "confidence": 1.0,
+                "merkle_root": merkle.get_root() if hasattr(merkle, 'get_root') else ""
+            }
+    
     # Detect attack type
     attack_type, confidence = model.predict(payload.input)
     
