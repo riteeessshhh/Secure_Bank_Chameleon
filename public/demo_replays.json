@@ -1,0 +1,585 @@
+[
+  {
+    "id": 1,
+    "timestamp": "2025-01-15T10:30:00.000Z",
+    "ip_address": "192.168.1.100",
+    "input_payload": "User ID: admin' OR 1=1--, Password: test123",
+    "attack_type": "SQLi",
+    "confidence": 0.95,
+    "deception_strategy": "Slow Loading + Fake Dashboard",
+    "actions": [
+      {
+        "type": "focus",
+        "ts": 0,
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 150,
+        "payload": "a",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 280,
+        "payload": "d",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 410,
+        "payload": "m",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 540,
+        "payload": "i",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 670,
+        "payload": "n",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 800,
+        "payload": "'",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 930,
+        "payload": " ",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1060,
+        "payload": "O",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1190,
+        "payload": "R",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1320,
+        "payload": " ",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1450,
+        "payload": "1",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1580,
+        "payload": "=",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1710,
+        "payload": "1",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1840,
+        "payload": "-",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1970,
+        "payload": "-",
+        "target": "userid"
+      },
+      {
+        "type": "focus",
+        "ts": 2500,
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2650,
+        "payload": "t",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2780,
+        "payload": "e",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2910,
+        "payload": "s",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3040,
+        "payload": "t",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3170,
+        "payload": "1",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3300,
+        "payload": "2",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3430,
+        "payload": "3",
+        "target": "password"
+      },
+      {
+        "type": "click",
+        "ts": 4000,
+        "x": 450,
+        "y": 520,
+        "target": "submit_button"
+      },
+      {
+        "type": "submit",
+        "ts": 4100
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "timestamp": "2025-01-15T11:15:00.000Z",
+    "ip_address": "10.0.0.50",
+    "input_payload": "User ID: <script>alert('XSS')</script>, Password: pass",
+    "attack_type": "XSS",
+    "confidence": 0.92,
+    "deception_strategy": "Slow Loading + Fake Dashboard",
+    "actions": [
+      {
+        "type": "focus",
+        "ts": 0,
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 200,
+        "payload": "<",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 350,
+        "payload": "s",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 500,
+        "payload": "c",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 650,
+        "payload": "r",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 800,
+        "payload": "i",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 950,
+        "payload": "p",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1100,
+        "payload": "t",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1250,
+        "payload": ">",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1400,
+        "payload": "a",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1550,
+        "payload": "l",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1700,
+        "payload": "e",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1850,
+        "payload": "r",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2000,
+        "payload": "t",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2150,
+        "payload": "(",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2300,
+        "payload": "'",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2450,
+        "payload": "X",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2600,
+        "payload": "S",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2750,
+        "payload": "S",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2900,
+        "payload": "'",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3050,
+        "payload": ")",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3200,
+        "payload": "<",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3350,
+        "payload": "/",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3500,
+        "payload": "s",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3650,
+        "payload": "c",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3800,
+        "payload": "r",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3950,
+        "payload": "i",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 4100,
+        "payload": "p",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 4250,
+        "payload": "t",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 4400,
+        "payload": ">",
+        "target": "userid"
+      },
+      {
+        "type": "focus",
+        "ts": 5000,
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 5150,
+        "payload": "p",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 5300,
+        "payload": "a",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 5450,
+        "payload": "s",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 5600,
+        "payload": "s",
+        "target": "password"
+      },
+      {
+        "type": "click",
+        "ts": 6200,
+        "x": 450,
+        "y": 520,
+        "target": "submit_button"
+      },
+      {
+        "type": "submit",
+        "ts": 6300
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "timestamp": "2025-01-15T12:00:00.000Z",
+    "ip_address": "172.16.0.25",
+    "input_payload": "User ID: user@example.com, Password: MyPass123!",
+    "attack_type": "Benign",
+    "confidence": 0.85,
+    "deception_strategy": "None",
+    "actions": [
+      {
+        "type": "focus",
+        "ts": 0,
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 300,
+        "payload": "u",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 450,
+        "payload": "s",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 600,
+        "payload": "e",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 750,
+        "payload": "r",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 900,
+        "payload": "@",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1050,
+        "payload": "e",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1200,
+        "payload": "x",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1350,
+        "payload": "a",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1500,
+        "payload": "m",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1650,
+        "payload": "p",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1800,
+        "payload": "l",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 1950,
+        "payload": "e",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2100,
+        "payload": ".",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2250,
+        "payload": "c",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2400,
+        "payload": "o",
+        "target": "userid"
+      },
+      {
+        "type": "keystroke",
+        "ts": 2550,
+        "payload": "m",
+        "target": "userid"
+      },
+      {
+        "type": "focus",
+        "ts": 3000,
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3150,
+        "payload": "M",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3300,
+        "payload": "y",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3450,
+        "payload": "P",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3600,
+        "payload": "a",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3750,
+        "payload": "s",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 3900,
+        "payload": "s",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 4050,
+        "payload": "1",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 4200,
+        "payload": "2",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 4350,
+        "payload": "3",
+        "target": "password"
+      },
+      {
+        "type": "keystroke",
+        "ts": 4500,
+        "payload": "!",
+        "target": "password"
+      },
+      {
+        "type": "click",
+        "ts": 5000,
+        "x": 450,
+        "y": 520,
+        "target": "submit_button"
+      },
+      {
+        "type": "submit",
+        "ts": 5100
+      }
+    ]
+  }
+]
+

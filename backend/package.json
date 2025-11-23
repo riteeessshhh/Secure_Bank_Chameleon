@@ -1,0 +1,22 @@
+{
+  "name": "securebank-backend-services",
+  "version": "1.0.0",
+  "description": "Backend services for Secure Bank forensic system",
+  "main": "backend/services/reportGenerator.js",
+  "scripts": {
+    "test-report": "node backend/scripts/generateReport.js"
+  },
+  "dependencies": {
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
+    "chart.js": "^4.4.0",
+    "chartjs-node-canvas": "^4.1.6",
+    "dayjs": "^1.11.10"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
+
+
+

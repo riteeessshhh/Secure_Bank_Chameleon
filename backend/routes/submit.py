@@ -1,0 +1,166 @@
+"""
+Enhanced submit endpoint that accepts and stores attacker session actions.
+"""
+from fastapi import APIRouter, Request
+from pydantic import BaseModel
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+from backend.database import Database
+from backend.utils.hash import hash_event
+import json
+
+router = APIRouter()
+db = Database()
+
+# In-memory store for actions (in production, use database)
+actions_store = []
+
+
+class Action(BaseModel):
+    """Single action in a session"""
+    type: str  # 'keystroke', 'click', 'navigate', 'focus', 'submit'
+    ts: float  # timestamp in milliseconds
+    payload: Optional[str] = None  # for keystrokes
+    x: Optional[float] = None  # for clicks
+    y: Optional[float] = None  # for clicks
+    target: Optional[str] = None  # element id/selector
+    value: Optional[str] = None  # form value at time of action
+
+
+class SubmitRequest(BaseModel):
+    """Enhanced submit request with actions"""
+    input: str
+    username: Optional[str] = None
+    hp_field: Optional[str] = None
+    ua: Optional[str] = None
+    headers: Optional[Dict[str, Any]] = None
+    actions: Optional[List[Action]] = None  # Session actions array
+    ip_address: Optional[str] = "127.0.0.1"
+
+
+@router.post("/api/submit")
+async def submit_attack(request: Request, payload: SubmitRequest):
+    """
+    Accept attack submission with optional session actions.
+    
+    Stores the event with computed hash and emits socket.io event.
+    """
+    from backend.model import MLModel
+    from backend.deception import DeceptionEngine
+    from backend.blockchain import MerkleTree
+    
+    model = MLModel()
+    deception = DeceptionEngine()
+    merkle = MerkleTree()
+    
+    # Detect attack type
+    attack_type, confidence = model.predict(payload.input)
+    
+    # Fallback pattern detection
+    input_lower = payload.input.lower()
+    sqli_patterns = ["' or", "or 1=1", "union select", "drop table", "'; --"]
+    xss_patterns = ["<script", "javascript:", "onerror=", "<img src"]
+    
+    if attack_type == "Benign" and confidence < 0.8:
+        if any(pattern in input_lower for pattern in sqli_patterns):
+            attack_type = "SQLi"
+            confidence = 0.9
+        elif any(pattern in input_lower for pattern in xss_patterns):
+            attack_type = "XSS"
+            confidence = 0.9
+    
+    # Get deception strategy
+    strategy_func = deception.decide_strategy(attack_type)
+    response = strategy_func()
+    
+    # Create event object
+    event = {
+        'ip_address': payload.ip_address or request.client.host,
+        'input_payload': payload.input,
+        'attack_type': attack_type,
+        'confidence': confidence,
+        'deception_strategy': response['deception'],
+        'timestamp': datetime.now().isoformat(),
+        'user_agent': payload.ua,
+        'headers': payload.headers or {},
+        'actions': [action.dict() for action in (payload.actions or [])]  # Store actions
+    }
+    
+    # Compute event hash
+    event_hash = hash_event(event)
+    event['hash'] = event_hash
+    
+    # Store in database
+    log_id = db.log_attack(
+        event['ip_address'],
+        event['input_payload'],
+        event['attack_type'],
+        event['confidence'],
+        event['deception_strategy'],
+        event_hash
+    )
+    
+    # Store actions separately (in production, use database table)
+    if payload.actions:
+        actions_store.append({
+            'event_id': log_id,
+            'actions': [action.dict() for action in payload.actions],
+            'timestamp': datetime.now().isoformat()
+        })
+    
+    # Emit socket.io event (if socket.io is set up)
+    # socketio.emit('attack_event', {
+    #     'id': log_id,
+    #     'time': event['timestamp'],
+    #     'ip': event['ip_address'],
+    #     'shortSummary': f"{attack_type} attack detected"
+    # })
+    
+    return {
+        "received": True,
+        "id": log_id,
+        "hash": event_hash
+    }
+
+
+@router.get("/api/events/{event_id}/actions")
+async def get_event_actions(event_id: int):
+    """Get actions for a specific event"""
+    # Find actions for this event
+    event_actions = next(
+        (item for item in actions_store if item['event_id'] == event_id),
+        None
+    )
+    
+    if not event_actions:
+        return {"actions": []}
+    
+    return {
+        "event_id": event_id,
+        "actions": event_actions['actions']
+    }
+
+
+@router.get("/api/events/{event_id}")
+async def get_event(event_id: int):
+    """Get full event with actions"""
+    logs = db.get_logs()
+    event = next((log for log in logs if log.get('id') == event_id), None)
+    
+    if not event:
+        return {"error": "Event not found"}
+    
+    # Get actions
+    event_actions = next(
+        (item for item in actions_store if item['event_id'] == event_id),
+        None
+    )
+    
+    result = dict(event)
+    if event_actions:
+        result['actions'] = event_actions['actions']
+    else:
+        result['actions'] = []
+    
+    return result
+
