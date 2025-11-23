@@ -360,6 +360,32 @@ const Dashboard = () => {
         doc.save(`forensic_report_${new Date().toISOString().split('T')[0]}.pdf`);
     };
 
+    // Format timestamp for display with proper timezone handling
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        try {
+            const date = new Date(timestamp);
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+                console.warn('[Dashboard] Invalid timestamp:', timestamp);
+                return timestamp; // Return raw timestamp if invalid
+            }
+            // Format as: "MM/DD/YYYY, HH:MM:SS AM/PM" in user's local timezone
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        } catch (error) {
+            console.error('[Dashboard] Error formatting timestamp:', error, timestamp);
+            return timestamp;
+        }
+    };
+
     const getThreatColor = (level) => {
         const colors = {
             'Low': 'bg-green-500',
@@ -755,8 +781,8 @@ const Dashboard = () => {
                                         }`}>{log.attack_type}</span>
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
                                     <span className="text-xs text-gray-400 dark:text-gray-400 light:text-gray-600">Confidence: <span className="text-yellow-400 dark:text-yellow-400 light:text-yellow-600 font-bold">{((log.confidence || 0) * 100).toFixed(1)}%</span></span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600" title={new Date(log.timestamp).toLocaleString()}>
-                                        {new Date(log.timestamp).toLocaleString()}
+                                    <span className="text-xs text-gray-500 dark:text-gray-500 light:text-gray-600" title={log.timestamp}>
+                                        {formatTimestamp(log.timestamp)}
                                     </span>
                                 </div>
                             </div>
