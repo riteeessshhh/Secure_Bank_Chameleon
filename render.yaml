@@ -22,5 +22,5 @@ services:
     staticPublishPath: client/dist
     envVars:
       - key: VITE_API_URL
-        value: https://chameleon-backend.onrender.com
+        value: https://chameleon-backend-7ks6.onrender.com
 

@@ -19,6 +19,12 @@ const getApiUrl = () => {
 
 export const API_URL = getApiUrl();
 
+// Debug: Log the API URL being used (remove in production if needed)
+if (typeof window !== 'undefined') {
+  console.log('[API Config] Using API URL:', API_URL);
+  console.log('[API Config] VITE_API_URL env:', import.meta.env.VITE_API_URL);
+}
+
 // Helper function to build full API endpoint URLs
 export const apiEndpoint = (path) => {
   // Remove leading slash if present to avoid double slashes
